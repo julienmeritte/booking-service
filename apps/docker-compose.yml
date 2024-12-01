@@ -1,0 +1,103 @@
+version: "3"
+
+services:
+  hotel-api:
+    image: hotel-api-clo5:dev
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - "DB_USER=clo5_user"
+      - "DB_PASSWORD=XZe&pR5%2397"
+      - "DB_URL=db"
+      - "DB_PORT=3306"
+      - "DB_NAME=clo5db"
+      - "JWT_SECRET_KEY=CLO5JWTOUI"
+      - "JWT_REFRESH_SECRET_KEY=CLO5JWTNON"
+    volumes:
+      - ./hotel-api:/app/
+    networks:
+      - clo5-net
+
+  reservation-api:
+    image: reservation-api-clo5:dev
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      - "DB_USER=clo5_user"
+      - "DB_PASSWORD=XZe&pR5%2397"
+      - "DB_URL=db"
+      - "DB_PORT=3306"
+      - "DB_NAME=clo5db"
+      - "JWT_SECRET_KEY=CLO5JWTOUI"
+      - "JWT_REFRESH_SECRET_KEY=CLO5JWTNON"
+    volumes:
+      - ./reservation-api:/app/
+    networks:
+      - clo5-net
+
+  mailing-api:
+    image: mailing-api-clo5:dev
+    restart: always
+    ports:
+      - "8082:8082"
+    environment:
+      - "DB_USER=clo5_user"
+      - "DB_PASSWORD=XZe&pR5%2397"
+      - "DB_URL=db"
+      - "DB_PORT=3306"
+      - "DB_NAME=clo5db"
+      - "JWT_SECRET_KEY=CLO5JWTOUI"
+      - "JWT_REFRESH_SECRET_KEY=CLO5JWTNON"
+      - "GMAIL_PWD=cpysfbunvsfsuyft"
+    volumes:
+      - ./mailing-api:/app/
+    networks:
+      - clo5-net
+
+  user-api:
+    image: user-api-clo5:dev
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      - "DB_USER=clo5_user"
+      - "DB_PASSWORD=XZe&pR5%2397"
+      - "DB_URL=db"
+      - "DB_PORT=3306"
+      - "DB_NAME=clo5db"
+      - "JWT_SECRET_KEY=CLO5JWTOUI"
+      - "JWT_REFRESH_SECRET_KEY=CLO5JWTNON"
+    volumes:
+      - ./user-api:/app/
+    networks:
+      - clo5-net
+
+  db:
+    image: db-clo5:dev
+    restart: always
+    environment:
+      - "MARIADB_DATABASE=clo5db"
+      - "MARIADB_ROOT_PASSWORD=root"
+    volumes:
+      - dbdata:/var/lib/mysql
+    networks:
+      - clo5-net
+
+  traefik:
+    image: traefik-clo5:dev
+    ports:
+      - "8000:8080"
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - clo5-net
+
+networks:
+  clo5-net:
+
+
+volumes:
+  dbdata:

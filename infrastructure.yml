@@ -1,0 +1,25 @@
+---
+- name: Install on VM3
+  hosts: VM3
+  roles:
+    - docker_swarm
+
+- name: Install on VM1
+  hosts: VM1
+  roles:
+    - docker_swarm
+
+- name: Install on VM2
+  hosts: VM2
+  roles:
+    - docker_swarm
+
+- name: Deploy registry on VM3
+  hosts: VM3
+  roles:
+    - docker_registry
+
+- name: mirror image docker hub on local registry on VM3
+  hosts: VM3
+  roles:
+    - docker_tickstack

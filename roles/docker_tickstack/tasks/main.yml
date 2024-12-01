@@ -1,0 +1,71 @@
+---
+- name: InfluxDB configuration
+  copy:
+    src: influxdb.conf
+    dest: "/home/vignan_q/influxdb.conf"
+    owner: "vignan_q"
+    group: "vignan_q"
+    mode: 0644
+
+- name: Setup InfluxDB
+  docker_container:
+    name: influxdb
+    image: 172.16.228.22:5000/vignan_q/influxdb:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+    volumes:
+      - "/home/vignan_q/influxdb.conf:/etc/influxdb/influxdb.conf"
+
+- name: Telegraf configuration
+  copy:
+    src: telegraf.conf
+    dest: "/home/vignan_q/telegraf.conf"
+    owner: "vignan_q"
+    group: "vignan_q"
+    mode: 0644
+
+- name: Setup Telegraf
+  docker_container:
+    name: telegraf
+    image: 172.16.228.22:5000/vignan_q/telegraf:latest
+    state: started
+    restart_policy: always
+    links:
+      - "influxdb:influxdb"
+    volumes:
+      - "/home/vignan_q/telegraf.conf:/etc/telegraf/telegraf.conf"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+- name: Kapacitor configuration
+  copy:
+    src: kapacitor.conf
+    dest: "/home/vignan_q/kapacitor.conf"
+    owner: "vignan_q"
+    group: "vignan_q"
+    mode: 0644
+
+- name: Setup Kapacitor
+  docker_container:
+    name: kapacitor
+    image: 172.16.228.22:5000/vignan_q/kapacitor:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "9092:9092"
+    volumes:
+      - "/home/vignan_q/kapacitor.conf:/etc/kapacitor/kapacitor.conf"
+
+- name: Setup Chronograf
+  docker_container:
+    name: chronograf
+    image: 172.16.228.22:5000/vignan_q/chronograf:latest
+    state: started
+    restart_policy: always
+    ports:
+      - "8888:8888"
+    links:
+      - "influxdb:influxdb"
+      - "kapacitor:kapacitor"

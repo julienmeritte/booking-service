@@ -1,0 +1,8 @@
+---
+- name: Create docker network
+  command: sudo docker network create -d bridge registry
+  ignore_errors: true
+
+- name: Start docker registry_network
+  command: sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
+  ignore_errors: true

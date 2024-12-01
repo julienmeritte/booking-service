@@ -1,0 +1,121 @@
+---
+- name: Clone repository
+  git:
+    repo: http://172.16.228.22/vignan_q/TIC-CLO5.git
+    dest: /home/vignan_q/repo/
+    clone: yes
+    update: yes
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Make image
+  command: chdir=/home/vignan_q/repo/apps make image
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Remove tmp folder
+  command: chdir=/home/vignan_q rm -rf repo/
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry Hotel-api
+  command: sudo docker tag hotel-api-clo5:dev 172.16.228.22:5000/hotel-api:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry Mailing-api
+  command: sudo docker tag mailing-api-clo5:dev 172.16.228.22:5000/mailing-api:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry User-api
+  command: sudo docker tag user-api-clo5:dev 172.16.228.22:5000/user-api:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry Reservation-api
+  command: sudo docker tag reservation-api-clo5:dev 172.16.228.22:5000/reservation-api:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry DB
+  command: sudo docker tag db-clo5:dev 172.16.228.22:5000/db:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Tag for local registry Traefik
+  command: sudo docker tag traefik-clo5:dev 172.16.228.22:5000/traefik:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry Hotel-api
+  command: sudo docker push 172.16.228.22:5000/hotel-api:latest && docker push 172.16.228.22:5000/hotel-api:dev
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry Mailing-api
+  command: sudo docker push 172.16.228.22:5000/mailing-api:latest && docker push 172.16.228.22:5000/mailing-api:dev
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry Db
+  command: sudo docker push 172.16.228.22:5000/db:latest && docker push 172.16.228.22:5000/db:dev
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry User-api
+  command: sudo docker push 172.16.228.22:5000/user-api:latest && docker push 172.16.228.22:5000/user-api:dev
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry Reservation-api
+  command: sudo docker push 172.16.228.22:5000/reservation-api:latest && docker push 172.16.228.22:5000/reservation-api:dev
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Push to local registry Traefik
+  command: sudo docker push 172.16.228.22:5000/traefik:latest
+  become: true
+  when: "{{ hostvars['vtm3'].exec_tasks }}"
+
+- name: Deploie Traefik
+  command: docker service create --name traefik --network clo5-net --constraint=node.role==manager --publish 8001:80 --publish 8080:8080 --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock 172.16.228.22:5000/traefik:latest --docker --docker.swarmMode --docker.domain=traefik --docker.watch --docker.watch --docker.exposedbydefault=false --api
+  ignore_errors: true
+
+- name: Deploie db dev
+  command: sudo docker service create --name db-dev --network clo5-net --constraint=node.role==worker --publish 4406:3306 --env MARIADB_ROOT_PASSWORD=root --env MARIADB_DATABASE=clo5db 172.16.228.22:5000/vignan_q/db:dev
+  ignore_errors: true
+
+- name: Deploie hotel-api dev
+  command: sudo docker service create --name hotel-api-dev --publish 8081:8080 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=4406 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/hotel-api:dev
+  ignore_errors: true
+
+- name: Deploie user-api dev
+  command: sudo docker service create --name user-api-dev --publish 8083:8084 --network clo5-net  --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=4406 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/user-api:dev
+  ignore_errors: true
+
+- name: Deploie reservation-api dev
+  command: sudo docker service create --name reservation-api-dev --publish 8082:8081 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=4406 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/reservation-api:dev
+  ignore_errors: true
+
+- name: Deploie mailing-api dev
+  command: sudo docker service create --name mailing-api-dev --publish 8084:8082 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=4406 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/mailing-api:dev
+  ignore_errors: true
+
+- name: Deploie db prod
+  command: sudo docker service create --name db-prod --network clo5-net --constraint=node.role==worker --publish 3306:3306 --env MARIADB_ROOT_PASSWORD=root --env MARIADB_DATABASE=clo5db 172.16.228.22:5000/vignan_q/db:latest
+  ignore_errors: true
+
+- name: Deploie hotel-api prod
+  command: sudo docker service create --name hotel-api-prod --publish 8091:8080 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=3306 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/hotel-api:latest
+  ignore_errors: true
+
+- name: Deploie user-api prod
+  command: sudo docker service create --name user-api-prod --publish 8093:8084 --network clo5-net  --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=3306 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/user-api:latest
+  ignore_errors: true
+
+- name: Deploie reservation-api prod
+  command: sudo docker service create --name reservation-api-prod --publish 8092:8081 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=3306 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/reservation-api:latest
+  ignore_errors: true
+
+- name: Deploie mailing-api prod
+  command: sudo docker service create --name mailing-api-prod --publish 8094:8082 --network clo5-net --constraint=node.role==worker --env DB_USER=clo5_user --env DB_PASSWORD=XZe&pR5%2397 --env DB_URL=172.16.228.22 --env DB_PORT=3306 --env DB_NAME=clo5db --env JWT_SECRET_KEY=CLO5JWTOUI --env JWT_REFRESH_SECRET_KEY=CLO5JWTNON 172.16.228.22:5000/vignan_q/mailing-api:latest
+  ignore_errors: true

@@ -1,0 +1,73 @@
+---
+- name: Install necessary dependencies
+  become: true
+  apt:
+    update_cache: yes
+    name: "{{item}}"
+    state: present
+  loop:
+    - apt-transport-https
+    - ca-certificates
+    - curl 
+    - software-properties-common 
+    - gnupg2
+
+- name: Add GPG key
+  become: true
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+  
+- name: Add apt repo
+  apt_repository:
+    repo: deb https://download.docker.com/linux/debian stretch stable main
+    state: present
+  become: true
+
+- name: Update the system
+  become: true
+  apt:
+    update_cache: yes
+    cache_valid_time: 30000
+
+- name: Install docker-ce
+  become: true
+  apt:
+    name: docker-ce
+    state: present
+  retries: 3
+  timeout: 300
+
+- name: Leave Swarm
+  command: sudo docker swarm leave --force
+  become: true
+  ignore_errors: true
+
+- name: Init Swarm Cluster
+  command: sudo docker swarm init
+  when: ansible_ssh_host == "{{ hostvars['vtm3'].ansible_host }}"
+
+- name: Retrive Token
+  shell: |
+      sudo docker swarm join-token -q worker
+  register: token_worker
+  when: ansible_ssh_host == "{{ hostvars['vtm3'].ansible_host }}"
+
+- name: Set Fact
+  set_fact:
+    tokenworker: "{{token_worker.stdout}}"
+  when: ansible_ssh_host == "{{ hostvars['vtm3'].ansible_host }}"
+
+- name: Join Swarm Cluster
+  command: sudo docker swarm join --token {{ hostvars['vtm3'].tokenworker }} {{ hostvars['vtm3'].ansible_host }}
+  when: ansible_ssh_host != "{{ hostvars['vtm3'].ansible_host }}"
+
+- name: Authorize registry
+  command: 'sudo echo "{"insecure-registries" : ["172.16.228.142:5000"]}" >> /etc/docker/daemon.json'
+
+- name: restart docker
+  command: sudo /etc/init.d/docker restart
+
+- name: create docker network
+  command: sudo docker network create --scope=swarm --driver=overlay clo5-net
+  when: ansible_ssh_host == "{{ hostvars['vtm3'].ansible_host }}"

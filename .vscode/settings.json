@@ -1,0 +1,7 @@
+{
+    "ansible.python.interpreterPath": "/opt/homebrew/bin/python3",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+    "python.formatting.provider": "none"
+}

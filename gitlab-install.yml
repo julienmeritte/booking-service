@@ -1,0 +1,5 @@
+---
+- name: Install on VM3
+  hosts: VM3
+  roles:
+    - gitlab

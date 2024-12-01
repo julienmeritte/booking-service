@@ -1,0 +1,75 @@
+---
+- name: Install necessary dependencies
+  become: true
+  apt:
+    update_cache: yes
+    name: "{{item}}"
+    state: present
+  loop:
+    - ca-certificates
+    - openssh-server
+    - curl 
+    - perl
+    - postfix
+
+- name:  Download GitLab-CE Deb script
+  become: true
+  get_url:
+    url: https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh
+    dest: /tmp/gitlab-ce.deb.sh
+
+- name: Execute GitLab-CE Deb script
+  become: true
+  command: /bin/bash /tmp/gitlab-ce.deb.sh
+
+- name: Install GitLab-CE
+  become: true
+  apt:
+    update_cache: yes
+    name: gitlab-ce
+    state: present
+
+- name: Configure GitLab Community Edition
+  command: sudo gitlab-ctl reconfigure
+
+- name: Create Admin 1
+  community.general.gitlab_user:
+    api_url: "{{ hostvars['vtm3'].gitlab_url }}"
+    validate_certs: false
+    api_username: root
+    api_password: "{{ hostvars['vtm3'].password }}"
+    name: "{{ hostvars['vtm3'].admin1_login }}"
+    username: "{{ hostvars['vtm3'].admin1_login }}"
+    password: "{{ hostvars['vtm3'].password }}"
+    email: "{{ hostvars['vtm3'].admin1_mail }}"
+    state: present
+    access_level: master
+    confirm: false
+
+- name: Create Admin 2
+  community.general.gitlab_user:
+    api_url: "{{ hostvars['vtm3'].gitlab_url }}"
+    validate_certs: false
+    api_username: root
+    api_password: "{{ hostvars['vtm3'].password }}"
+    name: "{{ hostvars['vtm3'].admin2_login }}"
+    username: "{{ hostvars['vtm3'].admin2_login }}"
+    password: "{{ hostvars['vtm3'].password }}"
+    email: "{{ hostvars['vtm3'].admin2_mail }}"
+    state: present
+    access_level: master
+    confirm: false
+
+- name: Create Admin 3
+  community.general.gitlab_user:
+    api_url: "{{ hostvars['vtm3'].gitlab_url }}"
+    validate_certs: false
+    api_username: root
+    api_password: "{{ hostvars['vtm3'].password }}"
+    name: "{{ hostvars['vtm3'].admin3_login }}"
+    username: "{{ hostvars['vtm3'].admin3_login }}"
+    password: "{{ hostvars['vtm3'].password }}"
+    email: "{{ hostvars['vtm3'].admin3_mail }}"
+    state: present
+    access_level: master
+    confirm: false
